@@ -281,7 +281,8 @@ async def cmd_reminder(message: types.Message):
 
 @dp.message(F.text)
 async def LLM_request(message: types.Message):
-    await bot.send_message(DEBUG_CHAT, f"USER{message.chat.id}:")
+    if DEBUG:
+        await bot.send_message(DEBUG_CHAT, f"USER{message.chat.id}:")
     logger.info(f"USER{message.chat.id}TOLLM:{message.text}")
     await f_debug(message.chat.id, message.message_id)
     typing_task = asyncio.create_task(keep_typing(message.chat.id))
@@ -430,9 +431,18 @@ async def main():
             await reminder()
             await asyncio.sleep(30)
 
+    except KeyboardInterrupt:
+        print("\n🛑 Получен сигнал остановки (Ctrl-C)")
+        polling_task.cancel()
+        try:
+            await polling_task
+        except asyncio.CancelledError:
+            pass
+        print("✅ Бот остановлен")
     except Exception as e:
         print(f"Ошибка: {e}")
-        await bot.send_message(DEBUG_CHAT, f"Произошла ошибка: '{e}'")
+        if DEBUG:
+            await bot.send_message(DEBUG_CHAT, f"Произошла ошибка: '{e}'")
         logger.critical(f"CRITICAL_ERROR: {e}", exc_info=True)
         raise  
 
@@ -441,13 +451,17 @@ async def run_with_restart():
     while True:
         try:
             await main()
+            break  # Нормальное завершение - выходим из цикла
+        except KeyboardInterrupt:
+            print("👋 Бот остановлен пользователем")
+            break  # Ctrl-C - выходим из цикла
         except Exception as e:
-            print(f"main() завершился с ошибкой: {e}. Перезапуск...")
-            
-            await asyncio.sleep(5)  
-        else:
-            break
+            print(f"main() завершился с ошибкой: {e}. Перезапуск через 5 секунд...")
+            await asyncio.sleep(5)
 
 
 if __name__ == "__main__":
-    asyncio.run(run_with_restart())
+    try:
+        asyncio.run(run_with_restart())
+    except KeyboardInterrupt:
+        print("👋 Завершение работы")
