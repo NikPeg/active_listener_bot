@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, ReplyKeyboardRemove
 
 from bot_instance import bot, dp
-from config import DEBUG_CHAT, MESSAGES
+from config import DEBUG_CHAT, MESSAGES, logger
 from database import User
 from filters import UserIsAdmin
 from services.stats_service import generate_user_stats
@@ -101,15 +101,18 @@ async def cmd_dispatch_all(message: types.Message, state: FSMContext):
 @dp.message(UserIsAdmin(), Command("stats"))
 async def cmd_stats(message: types.Message):
     """Команда /stats - просмотр статистики пользователя или всех пользователей."""
+    logger.info(f"Команда /stats получена от пользователя {message.chat.id}")
     user_id = None
 
     # Проверяем, является ли сообщение ответом на другое сообщение
     if message.reply_to_message and message.reply_to_message.text:
         # Пытаемся извлечь USER ID из текста сообщения
         replied_text = message.reply_to_message.text
+        logger.debug(f"Проверяем replied_text: {replied_text}")
         match = re.search(r"USER(\d+)", replied_text)
         if match:
             user_id = int(match.group(1))
+            logger.info(f"Извлечен user_id: {user_id}")
 
     # Отправляем сообщение о начале обработки
     if user_id:

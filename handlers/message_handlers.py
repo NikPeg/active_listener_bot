@@ -97,6 +97,11 @@ async def unknown_message(message: types.Message):
     """Обработка неизвестных типов сообщений."""
     # Игнорируем сообщения из DEBUG_CHAT
     if message.chat.id == DEBUG_CHAT:
+        logger.debug(f"Игнорируем сообщение из DEBUG_CHAT: {message.text}")
         return
 
+    logger.warning(
+        f"Unknown message от {message.chat.id}, "
+        f"тип: {message.content_type}, текст: {message.text}"
+    )
     await message.answer(MESSAGES["unknown_message"])
