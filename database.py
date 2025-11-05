@@ -13,6 +13,7 @@ DEBUG_CHAT = int(os.environ.get("DEBUG_CHAT"))
 DATABASE_NAME = os.environ.get("DATABASE_NAME")
 TABLE_NAME = os.environ.get("TABLE_NAME")
 MAX_CONTEXT = int(os.environ.get("MAX_CONTEXT"))
+MAX_STORAGE = int(os.environ.get("MAX_STORAGE", "100"))
 DELAYED_REMINDERS_HOURS = int(os.environ.get("DELAYED_REMINDERS_HOURS"))
 DELAYED_REMINDERS_MINUTES = int(os.environ.get("DELAYED_REMINDERS_MINUTES"))
 TIMEZONE_OFFSET = int(os.environ.get("TIMEZONE_OFFSET"))
@@ -113,8 +114,12 @@ class User:
     async def update_prompt(self, role, new_request):
         new_entry = {"role": role, "content": new_request}
         self.prompt.append(new_entry)
-        if len(self.prompt) > MAX_CONTEXT:
-            self.prompt = self.prompt[-MAX_CONTEXT:]
+        if len(self.prompt) > MAX_STORAGE:
+            self.prompt = self.prompt[-MAX_STORAGE:]
+
+    def get_context_for_llm(self):
+        """Возвращает последние MAX_CONTEXT сообщений для отправки в LLM."""
+        return self.prompt[-MAX_CONTEXT:] if len(self.prompt) > MAX_CONTEXT else self.prompt
 
     async def update_in_db(self):
         async with aiosqlite.connect(DATABASE_NAME) as db:

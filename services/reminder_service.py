@@ -46,8 +46,8 @@ async def send_reminder_to_user(user_id: int):
     ):
         user.prompt.pop()
 
-    # Подготавливаем промпт для напоминания
-    prompt_for_request = user.prompt.copy()
+    # Подготавливаем промпт для напоминания (только последние MAX_CONTEXT сообщений)
+    prompt_for_request = user.get_context_for_llm().copy()
     current_date = datetime.now(timezone(timedelta(hours=3))).strftime(
         "%Y-%m-%d %H:%M:%S"
     )

@@ -153,7 +153,8 @@ exit
 | `MODEL` | `google/gemini-2.0-flash-exp:free` | Модель LLM |
 | `DEBUG` | `0` | Режим отладки (0 или 1) |
 | `TABLE_NAME` | `users` | Имя таблицы БД |
-| `MAX_CONTEXT` | `20` | Размер контекста |
+| `MAX_CONTEXT` | `20` | Размер контекста для модели |
+| `MAX_STORAGE` | `100` | Размер хранилища сообщений в БД |
 | `DELAYED_REMINDERS_HOURS` | `2` | Часы до напоминания |
 | `DELAYED_REMINDERS_MINUTES` | `0` | Минуты до напоминания |
 | `TIMEZONE_OFFSET` | `3` | Часовой пояс (UTC+3) |
