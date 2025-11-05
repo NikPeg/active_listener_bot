@@ -15,7 +15,7 @@ from services.llm_service import process_user_message
 from utils import forward_to_debug, keep_typing
 
 
-@dp.message(F.text & ~F.text.startswith('/'))
+@dp.message(F.text & ~F.text.startswith("/"))
 async def handle_text_message(message: types.Message):
     """Обработка текстовых сообщений через LLM (исключая команды)."""
     logger.info(f"USER{message.chat.id}TOLLM:{message.text}")
@@ -25,8 +25,14 @@ async def handle_text_message(message: types.Message):
     user_obj = User(message.chat.id)
     await user_obj.get_from_db()
     if message.from_user:
-        new_name = message.from_user.first_name if message.from_user.first_name else (
-            message.from_user.username if message.from_user.username else "Not_of_registration"
+        new_name = (
+            message.from_user.first_name
+            if message.from_user.first_name
+            else (
+                message.from_user.username
+                if message.from_user.username
+                else "Not_of_registration"
+            )
         )
         if user_obj.name != new_name and new_name != "Not_of_registration":
             user_obj.name = new_name

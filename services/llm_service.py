@@ -44,10 +44,15 @@ def log_prompt(chat_id: int, prompt: list[dict], prompt_type: str = "MESSAGE"):
     )
 
     # Системные промпты без истории (DEBUG уровень)
-    logger.debug(f"PROMPT_SYSTEM_{prompt_type}{chat_id}: {json.dumps(system_prompts, ensure_ascii=False)}")
+    logger.debug(
+        f"PROMPT_SYSTEM_{prompt_type}{chat_id}: {json.dumps(system_prompts, ensure_ascii=False)}"
+    )
 
     # Полный промпт со всей историей (FULL уровень)
-    logger.log(FULL_LEVEL, f"PROMPT_FULL_{prompt_type}{chat_id}: {json.dumps(prompt, ensure_ascii=False, indent=2)}")
+    logger.log(
+        FULL_LEVEL,
+        f"PROMPT_FULL_{prompt_type}{chat_id}: {json.dumps(prompt, ensure_ascii=False, indent=2)}",
+    )
 
 
 async def process_user_message(chat_id: int, message_text: str) -> str | None:

@@ -35,8 +35,10 @@ async def registration(message: types.Message):
 
     user = message.from_user
     # Используем имя пользователя (first_name), если нет - username, если и его нет - placeholder
-    user_name = user.first_name if user and user.first_name else (
-        user.username if user and user.username else "Not_of_registration"
+    user_name = (
+        user.first_name
+        if user and user.first_name
+        else (user.username if user and user.username else "Not_of_registration")
     )
 
     user = User(int(message.chat.id), user_name)

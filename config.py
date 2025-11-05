@@ -62,6 +62,7 @@ class TelegramLogsHandler(logging.Handler):
         """Отправка лог-записи в Telegram."""
         try:
             import asyncio
+
             log_entry = self.format(record)
             # Отправляем асинхронно
             asyncio.create_task(self.bot.send_message(self.chat_id, log_entry))
@@ -116,14 +117,16 @@ def setup_logger():
     logger._file_level = file_level
 
     # Логируем настройки в файл
-    logger.info(f"Logger initialized: FILE={file_log_level_str}, TELEGRAM={telegram_log_level_str}")
+    logger.info(
+        f"Logger initialized: FILE={file_log_level_str}, TELEGRAM={telegram_log_level_str}"
+    )
 
     return logger
 
 
 def add_telegram_handler(logger, bot):
     """Добавляет Telegram handler к логгеру после инициализации бота."""
-    telegram_level = getattr(logger, '_telegram_level', 100)
+    telegram_level = getattr(logger, "_telegram_level", 100)
 
     if telegram_level < 100:  # Если не DISABLED
         th = TelegramLogsHandler(bot, DEBUG_CHAT)
