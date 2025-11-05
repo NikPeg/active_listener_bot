@@ -1,17 +1,16 @@
 """
 Главный файл приложения - точка входа для запуска бота.
 """
-import asyncio
 
-from bot_instance import bot, dp
-from config import logger, DEBUG, DEBUG_CHAT
+import asyncio
+import contextlib
+
 import database
-from services.reminder_service import reminder_loop
 
 # Импортируем все обработчики (чтобы они зарегистрировались)
-import handlers.user_handlers
-import handlers.admin_handlers
-import handlers.message_handlers
+from bot_instance import bot, dp
+from config import DEBUG, DEBUG_CHAT, logger
+from services.reminder_service import reminder_loop
 
 
 async def main():
@@ -20,10 +19,10 @@ async def main():
     print(await database.check_db())
     print("Основная часть запущена")
     print("Нажмите Ctrl-C для остановки бота\n")
-    
+
     # Создаем задачу для напоминаний
     reminder_task = asyncio.create_task(reminder_loop())
-    
+
     try:
         # Запускаем polling - он сам обрабатывает сигналы
         await dp.start_polling(bot)
@@ -37,10 +36,8 @@ async def main():
     finally:
         print("Останавливаем бота...")
         reminder_task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await reminder_task
-        except asyncio.CancelledError:
-            pass
         await bot.session.close()
         print("✅ Бот остановлен")
 

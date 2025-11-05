@@ -1,6 +1,7 @@
 """
 Вспомогательные утилиты.
 """
+
 import asyncio
 
 from bot_instance import bot
@@ -10,7 +11,7 @@ from config import DEBUG, DEBUG_CHAT
 async def keep_typing(chat_id: int, duration: int = 30):
     """
     Периодически показывает статус "печатает..." для чат-бота.
-    
+
     Args:
         chat_id: ID чата
         duration: Продолжительность в секундах (по умолчанию 30)
@@ -24,15 +25,12 @@ async def keep_typing(chat_id: int, duration: int = 30):
 async def forward_to_debug(message_chat_id: int, message_id: int):
     """
     Пересылает сообщение в отладочный чат, если включен режим отладки.
-    
+
     Args:
         message_chat_id: ID чата с сообщением
         message_id: ID сообщения
     """
     if DEBUG:
         await bot.forward_message(
-            chat_id=DEBUG_CHAT, 
-            from_chat_id=message_chat_id, 
-            message_id=message_id
+            chat_id=DEBUG_CHAT, from_chat_id=message_chat_id, message_id=message_id
         )
-

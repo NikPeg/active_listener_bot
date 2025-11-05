@@ -1,10 +1,10 @@
-import aiosqlite
-import os
 import asyncio
-import json 
-from dotenv import load_dotenv
-from datetime import datetime, timedelta, timezone
+import json
+import os
+from datetime import UTC, datetime, timedelta
 
+import aiosqlite
+from dotenv import load_dotenv
 
 load_dotenv()
 LLM_TOKEN = os.environ.get("LLM_TOKEN")
@@ -15,22 +15,25 @@ TABLE_NAME = os.environ.get("TABLE_NAME")
 MAX_CONTEXT = int(os.environ.get("MAX_CONTEXT"))
 DELAYED_REMINDERS_HOURS = int(os.environ.get("DELAYED_REMINDERS_HOURS"))
 DELAYED_REMINDERS_MINUTES = int(os.environ.get("DELAYED_REMINDERS_MINUTES"))
-TIMEZONE_OFFSET =int(os.environ.get("TIMEZONE_OFFSET"))
+TIMEZONE_OFFSET = int(os.environ.get("TIMEZONE_OFFSET"))
 FROM_TIME = int(os.environ.get("FROM_TIME"))
 TO_TIME = int(os.environ.get("TO_TIME"))
+
 
 class User:
     def __init__(
         self,
         id,
         name=None,
-        prompt=[],
-        remind_of_yourself= "2077-06-15 22:03:51",  
+        prompt=None,
+        remind_of_yourself="2077-06-15 22:03:51",
         sub_lvl=0,
         sub_id=0,
         sub_period=-1,
         is_admin=0,
     ):
+        if prompt is None:
+            prompt = []
         self.id = id
         self.name = name
         self.prompt = prompt
@@ -53,7 +56,7 @@ class User:
                 self.id = row[0]
                 self.name = row[1]
                 self.prompt = json.loads(row[2])
-                self.remind_of_yourself = row[3]  
+                self.remind_of_yourself = row[3]
                 self.sub_lvl = row[4]
                 self.sub_id = row[5]
                 self.sub_period = row[6]
@@ -66,28 +69,25 @@ class User:
             await cursor.execute(sql, (user_id,))
             row = await cursor.fetchone()
             if row:
-                user = User(
+                return User(
                     id=row[0],
                     name=row[1],
                     prompt=json.loads(row[2]),
-                    remind_of_yourself=row[3], 
+                    remind_of_yourself=row[3],
                     sub_lvl=row[4],
                     sub_id=row[5],
                     sub_period=row[6],
                     is_admin=row[7],
                 )
-                return user
-            else:
-                return None
-
+            return None
 
     async def get_ids_from_table():
-        async with aiosqlite.connect(DATABASE_NAME) as db:
-            async with db.execute(f"SELECT id FROM {TABLE_NAME}") as cursor:
-                rows = await cursor.fetchall()
-                ids = [row[0] for row in rows]
-        return ids
-
+        async with (
+            aiosqlite.connect(DATABASE_NAME) as db,
+            db.execute(f"SELECT id FROM {TABLE_NAME}") as cursor,
+        ):
+            rows = await cursor.fetchall()
+        return [row[0] for row in rows]
 
     async def save_for_db(self):
         async with aiosqlite.connect(DATABASE_NAME) as db:
@@ -100,7 +100,7 @@ class User:
                 self.id,
                 self.name,
                 json.dumps(self.prompt),
-                self.remind_of_yourself, 
+                self.remind_of_yourself,
                 self.sub_lvl,
                 self.sub_id,
                 self.sub_period,
@@ -127,7 +127,7 @@ class User:
             values = (
                 self.name,
                 json.dumps(self.prompt),
-                self.remind_of_yourself, 
+                self.remind_of_yourself,
                 self.sub_lvl,
                 self.sub_id,
                 self.sub_period,
@@ -137,6 +137,7 @@ class User:
             await cursor.execute(sql_query, values)
             await db.commit()
             await cursor.close()
+
 
 async def check_db():
     async with aiosqlite.connect(DATABASE_NAME) as db:
@@ -170,21 +171,27 @@ async def user_exists(user_id):
 
     return bool(result)
 
-async def time_after(after_hours, after_minute, timezone_offset, lower_limit, upper_limit):
-    now_utc = datetime.now(timezone.utc)
+
+async def time_after(
+    after_hours, after_minute, timezone_offset, lower_limit, upper_limit
+):
+    now_utc = datetime.now(UTC)
     now_localized = now_utc + timedelta(hours=timezone_offset)
     future_time = now_localized + timedelta(hours=after_hours, minutes=after_minute)
     future_hour = future_time.hour
-    if lower_limit <= upper_limit:  
+    if lower_limit <= upper_limit:
         if lower_limit <= future_hour <= upper_limit:
-            future_time = future_time.replace(hour=upper_limit, minute=0, second=0, microsecond=0)
-    else: 
-        if lower_limit <= future_hour or future_hour < upper_limit: 
-            future_time = future_time.replace(hour=upper_limit, minute=0, second=0, microsecond=0)
+            future_time = future_time.replace(
+                hour=upper_limit, minute=0, second=0, microsecond=0
+            )
+    else:
+        if lower_limit <= future_hour or future_hour < upper_limit:
+            future_time = future_time.replace(
+                hour=upper_limit, minute=0, second=0, microsecond=0
+            )
     if future_time <= now_localized:
         future_time += timedelta(days=1)
-    formatted_future_time = future_time.strftime("%Y-%m-%d %H:%M:%S")
-    return formatted_future_time
+    return future_time.strftime("%Y-%m-%d %H:%M:%S")
 
 
 async def get_past_dates():
@@ -195,22 +202,20 @@ async def get_past_dates():
 
         now = datetime.now()
 
-        query = f"SELECT {"id"}, {"remind_of_yourself"} FROM {TABLE_NAME}"
-        
+        query = f"SELECT {'id'}, {'remind_of_yourself'} FROM {TABLE_NAME}"
+
         async with db.execute(query) as cursor:
             results = await cursor.fetchall()
         for row in results:
-            user_id = row[0]  
+            user_id = row[0]
             date_str = row[1]
             if date_str == "0":
                 continue
-            date_from_db = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+            date_from_db = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
             if date_from_db < now:
-                past_user_ids.append(user_id) 
+                past_user_ids.append(user_id)
 
     return past_user_ids
-
-
 
 
 async def main():
