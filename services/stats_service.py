@@ -5,14 +5,14 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import BytesIO
 
 import aiosqlite
 import matplotlib
 import matplotlib.pyplot as plt
 
-from config import TABLE_NAME, TIMEZONE_OFFSET
+from config import TABLE_NAME
 from database import DATABASE_NAME
 
 # Используем Agg backend для работы без GUI
@@ -33,13 +33,15 @@ WEEKDAY_NAMES = {
 async def get_user_timestamps(user_id: int | None = None) -> list[datetime]:
     """
     Получает все timestamps из таблицы messages для указанного пользователя или всех пользователей.
-    Применяет TIMEZONE_OFFSET для корректного отображения времени.
+
+    Важно: timestamps в БД уже сохранены в нужном часовом поясе (с учетом TIMEZONE_OFFSET),
+    поэтому дополнительная конвертация не требуется.
 
     Args:
         user_id: ID пользователя. Если None, собирает статистику по всем пользователям.
 
     Returns:
-        Список объектов datetime с временными метками (с учетом часового пояса).
+        Список объектов datetime с временными метками.
     """
     timestamps = []
 
@@ -57,14 +59,14 @@ async def get_user_timestamps(user_id: int | None = None) -> list[datetime]:
 
         rows = await cursor.fetchall()
 
-        # Парсим timestamps с учетом часового пояса
+        # Парсим timestamps
+        # ВАЖНО: не добавляем TIMEZONE_OFFSET, так как timestamp в БД
+        # уже сохранен с учетом часового пояса (см. database.py:125)
         for row in rows:
             if row[0]:
                 try:
                     dt = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")
-                    # Применяем смещение часового пояса
-                    dt_with_offset = dt + timedelta(hours=TIMEZONE_OFFSET)
-                    timestamps.append(dt_with_offset)
+                    timestamps.append(dt)
                 except (ValueError, TypeError):
                     continue
 
