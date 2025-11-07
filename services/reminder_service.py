@@ -34,6 +34,16 @@ WEEKDAY_NAMES = {
     6: "Воскресенье",
 }
 
+# Пользовательские запросы для разных типов напоминаний
+USER_PROMPTS_BY_TYPE = {
+    "interests": "Привет! Спроси у меня, чем интересным я занимаюсь в последнее время",
+    "situational": "Привет! Спроси у меня, как проходит мой день",
+    "humor": "Привет! Расскажи мне что-нибудь забавное или интересное",
+    "how_are_you": "Привет! Спроси у меня как у меня дела",
+    "compliment": "Привет! Поддержи меня и скажи что-нибудь приятное",
+    "plans": "Привет! Спроси у меня про мои планы",
+}
+
 
 async def send_reminder_to_user(user_id: int):
     """
@@ -62,6 +72,7 @@ async def send_reminder_to_user(user_id: int):
     reminder_type = random.choice(list(REMINDER_PROMPTS.keys()))
     reminder_prompt = REMINDER_PROMPTS[reminder_type]
 
+    logger.info(f"USER{user_id} - Отправляю напоминание типа [{reminder_type.upper()}]")
     logger.debug(f"USER{user_id} - Выбран тип напоминания: {reminder_type}")
 
     # Заменяем плейсхолдеры в выбранном REMINDER_PROMPT
@@ -89,9 +100,10 @@ async def send_reminder_to_user(user_id: int):
     # Добавляем явный user запрос, если нет сообщений в истории или последнее не от user
     # Это необходимо, чтобы модель понимала что нужно ответить
     if not context_messages or context_messages[-1]["role"] != "user":
+        user_prompt = USER_PROMPTS_BY_TYPE.get(reminder_type, "Привет! Напомни мне о себе")
         prompt_for_request.append({
             "role": "user",
-            "content": "Привет! Напомни мне о себе"
+            "content": user_prompt
         })
 
     # Логируем промпт перед отправкой
@@ -155,7 +167,7 @@ async def send_reminder_to_user(user_id: int):
         user.remind_of_yourself = now_msk.strftime("%Y-%m-%d %H:%M:%S")
         await user.update_in_db()
 
-        logger.info(f"LLM{user_id}REMINDER - {generated_message.text}")
+        logger.info(f"LLM{user_id}REMINDER[{reminder_type.upper()}] - {generated_message.text}")
 
     except Exception as e:
         logger.error(f"Ошибка при отправке напоминания пользователю {user_id}: {e}", exc_info=True)
